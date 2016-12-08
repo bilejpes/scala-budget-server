@@ -10,5 +10,6 @@ libraryDependencies += jdbc
 libraryDependencies += cache
 libraryDependencies += ws
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test
+libraryDependencies += "org.postgresql" % "postgresql" % "9.4-1201-jdbc41"
 
 
