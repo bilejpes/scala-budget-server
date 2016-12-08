@@ -1,9 +1,10 @@
 package controllers
 
 import javax.inject._
+
 import play.api._
 import play.api.mvc._
-
+import com.redis._
 /**
  * This controller creates an `Action` to handle HTTP requests to the
  * application's home page.
@@ -18,8 +19,9 @@ class HomeController @Inject() extends Controller {
    * a path of `/`.
    */
   def index = Action {
+    val r = new RedisClient("127.0.0.1", 6379)
 
-    Ok(views.html.index("Hello world!"))
+    Ok(views.html.index(r.get("key").get))
   }
 
 }
