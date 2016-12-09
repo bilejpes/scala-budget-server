@@ -2,8 +2,8 @@ package api
 
 import com.redis._
 
-object DB extends RedisClient("127.0.0.1", 6379/*, secret= Some("")*/) {
-//object DB extends RedisClient("ec2-184-73-200-54.compute-1.amazonaws.com", 13629, secret= Some("pcp334l9h13lh7dgv96rjik2adg")) {
+//object DB extends RedisClient("127.0.0.1", 6379/*, secret= Some("")*/) {
+object DB extends RedisClient("ec2-184-73-200-54.compute-1.amazonaws.com", 13629, secret= Some("pcp334l9h13lh7dgv96rjik2adg")) {
 
   def save(record: Record) = {
     set(record.key, record.value)
