@@ -1,4 +1,4 @@
 $ ->
-    $.get "/pairs", (keys, values) ->
+    $.get "/api/pairs", (keys, values) ->
         $.each keys, (key, value) ->
-            $("#keys").append $("<li>").text "#{key} -> #{value}"
+            $("#records").append $("<li>").text "#{key} -> #{value}"
