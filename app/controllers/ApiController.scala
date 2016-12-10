@@ -2,7 +2,8 @@ package controllers
 
 import javax.inject.Inject
 
-import api.{DB, Record}
+import api._
+import api.Status._
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.data.Form
@@ -12,16 +13,23 @@ import scala.io.Source
 
 class ApiController @Inject() extends Controller {
 
+  def deleteRecord(key: String) = Action {
+    Server.deleteRecord(key) match {
+      case DELETE_OK => Ok
+      case _ => NotFound
+    }
+  }
+
   def getKeys = Action {
-    Ok(Json.toJson(DB.getKeys))
+    Ok(Json.toJson(Server.getKeys))
   }
 
   def getValues = Action {
-    Ok(Json.toJson(DB.getValues))
+    Ok(Json.toJson(Server.getValues))
   }
 
   def getPairs = Action {
-    Ok(Json.toJson(DB.getPairs))
+    Ok(Json.toJson(Server.getPairs))
   }
 
   val recForm  =  Form[Record]{
@@ -36,11 +44,15 @@ class ApiController @Inject() extends Controller {
 //    println(getFileText(request.body))
 //    println(getData(request.body))
 //    println(recForm.bind(getData(request.body)))
-    DB.save(recForm.bind(getFileText(request.body)).get)
-    Redirect(routes.HomeController.index())
+    Server.addRecord(recForm.bind(getFileText(request.body)).get) match {
+      case ADD_CREATE => Created
+      case ADD_CHANGE => NoContent
+      case _ => NotFound
+    }
   }
 
-  def getData(body: AnyContent): Map[String, String] = {
+/*
+  def getData(body: AnyContent): Any = {
     body.asMultipartFormData.map(x => x.asFormUrlEncoded) match {
       case Some(s) => {
         s map {
@@ -52,13 +64,9 @@ class ApiController @Inject() extends Controller {
         Map()
       }
     }
-  }
+  }*/
 
   def getFileText(body: AnyContent) : Map[String, String] = {
-    /*body.asMultipartFormData.get.files map {
-      case Vector(x) =>  Map(x.filename -> Source.fromFile(x.ref.file).mkString)
-      case _  => Map()
-    }*/
     body.asMultipartFormData.get.files map { x =>
       (x.filename, Source.fromFile(x.ref.file).mkString)
     } match {

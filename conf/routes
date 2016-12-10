@@ -15,4 +15,5 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 GET     /api/keys                       controllers.ApiController.getKeys
 GET     /api/values                     controllers.ApiController.getValues
 GET     /api/pairs                      controllers.ApiController.getPairs
-PUT    /key                             controllers.ApiController.addRecord
+PUT     /api/records                    controllers.ApiController.addRecord
+DELETE  /api/records/:key                    controllers.ApiController.deleteRecord(key: String)
