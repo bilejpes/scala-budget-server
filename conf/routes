@@ -4,16 +4,11 @@ GET     /                           controllers.HomeController.index
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
-# Record
-#GET        /api/widgets         controllers.Widgets.index
-#GET        /api/widget/:id      controllers.Widgets.read(id: String)
-#POST       /api/widget          controllers.Widgets.create
-#DELETE     /api/widget/:id      controllers.Widgets.delete(id: String)
-#PATCH      /api/widget/:id      controllers.Widgets.update(id: String)
-
 # Api
 GET     /api/keys                       controllers.ApiController.getKeys
 GET     /api/values                     controllers.ApiController.getValues
 GET     /api/pairs                      controllers.ApiController.getPairs
+
 PUT     /api/records                    controllers.ApiController.addRecord
-DELETE  /api/records/:key                    controllers.ApiController.deleteRecord(key: String)
+DELETE  /api/records/:key               controllers.ApiController.deleteRecord(key: String)
+GET     /api/records/:key               controllers.ApiController.getRecord(key: String)

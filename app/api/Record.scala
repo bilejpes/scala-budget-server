@@ -1,4 +1,4 @@
 package api
 
-case class Record(key: String, value: String)
+case class Record(key: String, value: Array[Byte])
 
