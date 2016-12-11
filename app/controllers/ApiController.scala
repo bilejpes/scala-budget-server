@@ -1,5 +1,6 @@
 package controllers
 
+import java.nio.file.{Files, Paths}
 import javax.inject.Inject
 
 import api._
@@ -43,24 +44,29 @@ class ApiController @Inject() extends Controller {
     */
   def getRecord(key: String) = Action { implicit request =>
     Server.getValue(key) match {
-      case Some(value) => Ok(value)
+      case Some(value) => Ok(value).withHeaders("Connection" -> "close")
       case None => NotFound
     }
   }
 
   /**
-    * Adds record to the database
+    * Adds record to the database, header("name" -> "filename") needed
     * @return Created - if there was no record with specified key
     *         NoContent - changed content of the record in database, returns no body with request
     *         NotFound - in case of any error
     */
   def addRecord = Action { implicit request =>
-    getFileText(request) match {
-      case Some(record) => Server.addRecord(record) match {
-        case ADD_CREATE => Created
-        case ADD_CHANGE => NoContent
-        case _ => NotFound
-      }
+    request.headers.get("name") match {
+      case Some(_) =>
+        getRecord(request) match {
+          case Some(record) =>
+            Server.addRecord(record) match {
+              case ADD_CREATE => Created
+              case ADD_CHANGE => NoContent
+              case _ => NotFound
+            } // end of Server.addRecord
+          case None => NotFound
+        }// end of getRecord
       case None => NotFound
     }
   }
@@ -79,44 +85,38 @@ class ApiController @Inject() extends Controller {
   }
 
   /**
-    * Filter for incoming requests. Accepts only AnyContentAsRaw and header with name
-    * or AnyContentAsMultipartFormData
+    * Filter for incoming requests. Accepts only AnyContentAsRaw or AnyContentAsMultipartFormData
+    * and header with name
     * @param request
-    * @return Some(Record) with "name:String, file:Array[Byte]" where name depends on the incoming request format
+    * @return Record with "name:String, file:Array[Byte]" where name takes from header
     *         (in case of AnyContentAsRaw takes name from header("name"),
     *          in case of AnyContentAsMultipartFormData takes name from the file itself)
-    *         None in case of any error
     */
-  def getFileText(request: Request[AnyContent]) : Option[Record] = {
+  def getRecord(request: Request[AnyContent]) : Option[Record] = {
     request.body match {
-      case x : AnyContentAsRaw => {
-        request.headers.get("name") match {
-          case Some(name) => Some(Record(name, getRawData(x.asRaw.get)))
-          case None => None
-        }
+      case x : AnyContentAsRaw => Some(Record(request.headers("name"), getRawData(x.asRaw.get)))
+      case y : AnyContentAsMultipartFormData =>
+        getMultiPartFormData(y.asMultipartFormData.get) match {
+          case Some(data) => Some(Record(request.headers("name"), data))
+          case _ => None
       }
-      case y : AnyContentAsMultipartFormData => getMultiPartFormData(y.asMultipartFormData.get)
       case _ => None
     }
   }
 
   /**
     * @param parts
-    * @return Some(record)
+    * @return Option[Array[Byte]]
     */
-  def getMultiPartFormData(parts: MultipartFormData[TemporaryFile]) : Option[Record] = {
+  def getMultiPartFormData(parts: MultipartFormData[TemporaryFile]) =
     parts.files.headOption match {
-      case Some(head) =>
-        Some(Record(head.filename, Source.fromFile(head.ref.file).mkString.getBytes))
-      case None => None
+      case Some(head) => Some(Files.readAllBytes(head.ref.file.toPath))
+      case _ => None
     }
-  }
 
   /**
     * @param rawBuffer
     * @return Array[Byte] from rawBuffer
     */
-  def getRawData(rawBuffer: RawBuffer) = {
-    rawBuffer.asBytes().get.toArray
-  }
+  def getRawData(rawBuffer: RawBuffer) =  rawBuffer.asBytes().get.toArray
 }
