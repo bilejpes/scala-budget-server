@@ -22,6 +22,6 @@ GET     /api/keys                       controllers.ApiController.getKeys       
 GET     /api/values                     controllers.ApiController.getValues     #returns all values as JSON
 GET     /api/pairs                      controllers.ApiController.getPairs      #returns all key:value as JSON
 
-PUT     /api/records                    controllers.ApiController.addRecord
+PUT     /api/records                    controllers.ApiController.addRecord     #needs header(name -> filename)
 DELETE  /api/records/:key               controllers.ApiController.deleteRecord(key: String)
 GET     /api/records/:key               controllers.ApiController.getRecord(key: String)
