@@ -15,7 +15,6 @@ import scala.io.Source
 class HomeController @Inject() extends Controller {
 
   def index = Action {
-    println(Source.fromFile(new File("README")).mkString)
     val readme : Iterator[String] = Source.fromFile(new File("README")).getLines()
     Ok(views.html.index(readme))
   }
