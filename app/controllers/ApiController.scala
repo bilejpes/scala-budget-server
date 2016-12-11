@@ -93,7 +93,7 @@ class ApiController @Inject() extends Controller {
     */
   def getRecord(request: Request[AnyContent]) : Option[Record] = {
     request.body match {
-      case x : AnyContentAsRaw => Some(Record(request.headers("name"), getRawData(x.asRaw.get)))
+      case x : AnyContentAsRaw =>Some(Record(request.headers("name"), getRawData(x.asRaw.get)))
       case y : AnyContentAsMultipartFormData =>
         getMultiPartFormData(y.asMultipartFormData.get) match {
           case Some(data) => Some(Record(request.headers("name"), data))
@@ -115,7 +115,12 @@ class ApiController @Inject() extends Controller {
 
   /**
     * @param rawBuffer
-    * @return Array[Byte] from rawBuffer
+    * @return Option[Array[Byte]] from rawBuffer
     */
-  def getRawData(rawBuffer: RawBuffer) =  rawBuffer.asBytes().get.toArray
+  def getRawData(rawBuffer: RawBuffer) : Array[Byte] = {
+    rawBuffer.asBytes() match {
+      case Some(bytes) => bytes.toArray
+      case None => Files.readAllBytes(rawBuffer.asFile.toPath)
+    }
+  }
 }
