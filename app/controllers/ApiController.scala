@@ -9,7 +9,6 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.libs.Files.TemporaryFile
 
-import scala.io.Source
 
 class ApiController @Inject() extends Controller {
 

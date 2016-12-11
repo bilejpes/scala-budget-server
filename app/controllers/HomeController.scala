@@ -1,7 +1,11 @@
 package controllers
 
+import java.io.File
 import javax.inject._
+
 import play.api.mvc._
+
+import scala.io.Source
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -11,7 +15,9 @@ import play.api.mvc._
 class HomeController @Inject() extends Controller {
 
   def index = Action {
-    Ok(views.html.index(""))
+    println(Source.fromFile(new File("README")).mkString)
+    val readme : Iterator[String] = Source.fromFile(new File("README")).getLines()
+    Ok(views.html.index(readme))
   }
 
 }

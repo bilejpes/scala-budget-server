@@ -1,5 +1,5 @@
 scala-budget
-=================================
+===========
 
 Test task for Budgetbakers.
 
@@ -13,3 +13,15 @@ Controllers
 - ApiController.scala:
 
   Handling HTTP requests such PUT, GET, DELETE.
+
+
+===========
+
+# Api
+GET     /api/keys                       controllers.ApiController.getKeys       #returns all keys as JSON
+GET     /api/values                     controllers.ApiController.getValues     #returns all values as JSON
+GET     /api/pairs                      controllers.ApiController.getPairs      #returns all key:value as JSON
+
+PUT     /api/records                    controllers.ApiController.addRecord
+DELETE  /api/records/:key               controllers.ApiController.deleteRecord(key: String)
+GET     /api/records/:key               controllers.ApiController.getRecord(key: String)
