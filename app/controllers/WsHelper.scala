@@ -25,7 +25,7 @@ trait WsHelper {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val apiUrl = "https://ipnpb.sandbox.paypal.com"
+  val apiUrl = "https://ipnpb.sandbox.paypal.com/cgi-bin/webscr"
 
   object Response {
     val Success = Response(true)
