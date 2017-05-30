@@ -147,7 +147,7 @@ class ApiController @Inject() extends Controller with WsHelper {
       },
       ipn => {
         println(s"$ipn")
-        post("", null)
+        post("", Json.toJson("ahoj"))
         Ok(ipn.aboutYou.receiver_email.getOrElse(""))
       }
     )
