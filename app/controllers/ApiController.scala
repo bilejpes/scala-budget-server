@@ -140,6 +140,8 @@ class ApiController @Inject() extends Controller with WsHelper {
   )
 
   def ipnPost = Action { implicit request =>
+    printf(s"\n\n${request.body.asFormUrlEncoded}\n\n")
+    printf(s"\n\n${request.headers}\n\n")
     userForm.bindFromRequest.fold(
       formWithErrors => {
         val data = formWithErrors.data.mkString(",  ")
