@@ -12,3 +12,9 @@ GET     /api/pairs                      controllers.ApiController.getPairs
 PUT     /api/records                    controllers.ApiController.addRecord
 DELETE  /api/records/:key               controllers.ApiController.deleteRecord(key: String)
 GET     /api/records/:key               controllers.ApiController.getRecord(key: String)
+
+
+
+
+# ----------- IPN testing
+POST    /ipn                            controllers.ApiController.ipnPost

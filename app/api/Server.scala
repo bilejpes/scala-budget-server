@@ -34,16 +34,6 @@ object Server extends RedisClient("ec2-184-73-200-54.compute-1.amazonaws.com", 1
     * Deletes record with specified key
     * @param key delete record with this key
     * @return DELETE_OK if successful
-    *         DELETE_ERROR if no such record
-    */
-  def deleteRecord(key: String) = {
-    del(key) match {
-      case Some(0) => DELETE_ERROR
-      case _ => DELETE_OK
-    }
-  }
-
-  /**
     * Adds record to the database
     * @return ADD_CREATE - if there was no record with specified key
     *         ADD_CHANGE - changed content of the record in database, returns no body with request
@@ -56,6 +46,16 @@ object Server extends RedisClient("ec2-184-73-200-54.compute-1.amazonaws.com", 1
       case true if created => ADD_CREATE
       case true => ADD_CHANGE
       case _ => ADD_ERROR
+    }
+  }
+
+  /**
+    *         DELETE_ERROR if no such record
+    */
+  def deleteRecord(key: String) = {
+    del(key) match {
+      case Some(0) => DELETE_ERROR
+      case _ => DELETE_OK
     }
   }
 }
