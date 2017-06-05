@@ -29,4 +29,3 @@ GET     /api/records/:key               controllers.ApiController.getRecord(key:
 
 # ----------- IPN testing
 POST    /ipn                            controllers.ApiController.ipnPost
-Controller.getRecord(key: String)

@@ -1,88 +1,24 @@
 package controllers
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 import javax.inject.Inject
 
-import api._
 import api.Status._
-import org.joda.time.DateTime
-import play.api.data.Form
+import api._
+import models.IPNResult.{Invalid, Verified}
+import models._
+import play.api.libs.Files.TemporaryFile
 import play.api.libs.json.Json
 import play.api.mvc._
-import play.api.libs.Files.TemporaryFile
+
+import scala.concurrent.ExecutionContext
 
 
-class ApiController @Inject() extends Controller with WsHelper {
+class ApiController @Inject()(implicit ec: ExecutionContext) extends Controller with WsHelper {
 
-
-/*
-
-  val voucherForm = Form(
-    mapping(
-      "voucherName" -> nonEmptyText,
-      "voucherCode" -> optional(text(minLength = 6).verifying(pattern("""[a-zA-Z0-9]+""".r, error = "Only alphanumeric allowed"))),
-      "genCode" -> boolean,
-      "vouchersCount" -> optional(number(min = 1)),
-      "planId" -> nonEmptyText,
-      "totalCount" -> default(number(min = 1), 1),
-      "durationInDays" -> optional(number(min = 1)),
-      "durationAsDate" -> optional(jodaDate("yyyy-MM-dd", timeZone = DateTimeZone.UTC)),
-      "validUntil" -> jodaDate("yyyy-MM-dd", timeZone = DateTimeZone.UTC),
-      "email" -> optional(email),
-      "applyVoucher" -> boolean
-    )(VoucherForm.apply)(VoucherForm.unapply).verifying(durationCheckConstraint)
-  )
-
-
-  def index = Action {
-    Redirect(routes.UserController.getProfileByEmailOrId(None))
-  }
-
-
-  def vouchers = Action.async { implicit request =>
-    planDao.getVoucherable.map { plans =>
-      Ok(views.html.vouchers.index(voucherForm, plans.map(p => p.id -> p.id)))
-    }
-  }
-
-
-  def vouchersPost = Action.async { implicit request =>
-    voucherForm.bindFromRequest.fold(
-      formWithErrors => {
-        planDao.getVoucherable.map( plans =>
-          BadRequest(views.html.vouchers.index(formWithErrors, plans.map(p => p.id -> p.id)))
-        )
-      },
-      voucherData => {
-        val redirect: Result = Redirect(routes.Application.vouchers)
-        voucherDao.generateVoucher(voucherData.copy(validUntil = voucherData.validUntil.plusDays(1))).map { vouchers =>
-          if (voucherData.applyVoucher) {
-            Redirect(routes.UserController.getProfileByEmailOrId(voucherData.email))
-          } else {
-            redirect.flashing("success" -> Messages("voucher.form.success", vouchers.map(_.voucherCode).mkString(",")))
-          }
-        } recover {
-          case e: InvalidRequestException => redirect.flashing("failure" -> Messages("voucher.form.failure", e.getMessage))
-        }
-      }
-    )
-  }*/
-  import play.api.data._
   import play.api.data.Forms._
+  import play.api.data._
 
-  case class AboutYou(receiver_email: Option[String],  receiver_id: Option[String],  residence_country: Option[String])
-  case class AboutTransaction(test_ipn: Option[String], transaction_subject: Option[String], txn_id: Option[String], txn_type: Option[String])
-  case class AboutBuyer(payer_email: Option[String] = None, payer_id: Option[String] = None, payer_status: Option[String] = None, first_name: Option[String] = None, last_name: Option[String] = None, address_city: Option[String] = None, address_country: Option[String] = None, address_state: Option[String] = None, address_status: Option[String] = None, address_country_code: Option[String] = None, address_name: Option[String] = None, address_street: Option[String] = None, address_zip: Option[String] = None)
-  case class AboutPayment(custom: Option[String] = None, handling_amount: Option[String] = None, item_name: Option[String] = None, item_number: Option[String] = None, mc_currency: Option[String] = None, mc_fee: Option[String] = None, mc_gross: Option[String] = None, payment_date: Option[String] = None, payment_fee: Option[String] = None, payment_gross: Option[String] = None, payment_status: Option[String] = None, payment_type: Option[String] = None, protection_eligibility: Option[String] = None, quantity: Option[String] = None, shipping: Option[String] = None, tax: Option[String] = None)
-  case class Other(notify_version: Option[String] = None, charset: Option[String] = None, verify_sign: Option[String] = None)
-
-  case class IPN(
-                  aboutYou: AboutYou,
-                  aboutTransaction: AboutTransaction,
-                  aboutBuyer: AboutBuyer,
-                  aboutPayment: AboutPayment,
-                  other: Other
-                )
 
 
   val userForm = Form(
@@ -91,7 +27,7 @@ class ApiController @Inject() extends Controller with WsHelper {
         "receiver_email" -> optional(text),
         "receiver_id" -> optional(text),
         "residence_country" -> optional(text)
-      )(AboutYou.apply)(AboutYou.unapply),
+      )(AboutSeller.apply)(AboutSeller.unapply),
       "" -> mapping(
         "test_ipn" -> optional(text),
         "transaction_subject" -> optional(text),
@@ -139,9 +75,13 @@ class ApiController @Inject() extends Controller with WsHelper {
     )(IPN.apply)(IPN.unapply)
   )
 
+  val receiverEmail = "pes@bb.com"
+  val paymentStatus = "completed"
+  val handlingAmount = "50"
+
   def ipnPost = Action { implicit request =>
-    printf(s"\n\n${request.body.asFormUrlEncoded}\n\n")
-    printf(s"\n\n${request.headers}\n\n")
+    val body: Map[String, Seq[String]] = request.body.asFormUrlEncoded.get
+    val upd:  List[(String, Seq[String])] = List("cmd" -> Seq("_notify-validate"))
     userForm.bindFromRequest.fold(
       formWithErrors => {
         val data = formWithErrors.data.mkString(",  ")
@@ -149,12 +89,36 @@ class ApiController @Inject() extends Controller with WsHelper {
       },
       ipn => {
         println(s"$ipn")
-        post("", Json.toJson("ahoj"))
-        Ok(ipn.aboutYou.receiver_email.getOrElse(""))
+        post((upd ++ body.toList).toMap) map {
+          case Verified =>
+            println("Verified callback from PayPal")
+            if(checkRequiredFields(ipn)) {
+              println("validated fields - continue")
+            }
+            else {
+              println("some fraud is here")
+            }
+          case Invalid =>
+            println("Invalid callback from PayPal")
+            if(checkRequiredFields(ipn)) {
+              println("validated fields - continue")
+            }
+            else {
+              println("some fraud is here")
+            }
+
+        }
+        Ok(ipn.aboutSeller.receiver_email.getOrElse(""))
       }
     )
   }
 
+
+  private def checkRequiredFields(ipn: IPN): Boolean = {
+      ipn.aboutSeller.receiver_email.getOrElse("") == receiverEmail &&
+      ipn.aboutPayment.payment_status.getOrElse("") == paymentStatus &&
+      ipn.aboutPayment.handling_amount.getOrElse("") == handlingAmount
+  }
 
 
 
