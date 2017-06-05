@@ -96,7 +96,7 @@ class ApiController @Inject()(implicit ec: ExecutionContext) extends Controller 
         BadRequest(data)
       },
       ipn => {
-        println(s"$ipn")
+        println(s"${Json.toJson(ipn)}")
         post((upd ++ body.toList).toMap) map {
           case Verified =>
             println("Verified callback from PayPal")
