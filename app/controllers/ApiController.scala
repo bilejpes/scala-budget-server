@@ -8,8 +8,8 @@ import api._
 import models.IPNResult.{Invalid, Verified}
 import models._
 import play.api.libs.Files.TemporaryFile
-import play.api.libs.json.Json
 import play.api.mvc._
+import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
 
@@ -79,6 +79,14 @@ class ApiController @Inject()(implicit ec: ExecutionContext) extends Controller 
   val paymentStatus = "completed"
   val handlingAmount = "50"
 
+
+  implicit val aboutSellerFormat: Format[AboutSeller] = Json.format[AboutSeller]
+  implicit val aboutTransactionFormat: Format[AboutTransaction] = Json.format[AboutTransaction]
+  implicit val aboutBuyerFormat: Format[AboutBuyer] = Json.format[AboutBuyer]
+  implicit val aboutPaymentFormat: Format[AboutPayment] = Json.format[AboutPayment]
+  implicit val otherFormat: Format[Other] = Json.format[Other]
+  implicit val ipnFormat: Format[IPN] = Json.format[IPN]
+
   def ipnPost = Action { implicit request =>
     val body: Map[String, Seq[String]] = request.body.asFormUrlEncoded.get
     val upd:  List[(String, Seq[String])] = List("cmd" -> Seq("_notify-validate"))
@@ -108,7 +116,7 @@ class ApiController @Inject()(implicit ec: ExecutionContext) extends Controller 
             }
 
         }
-        Ok(ipn.aboutSeller.receiver_email.getOrElse(""))
+        Ok(Json.toJson(ipn))
       }
     )
   }
